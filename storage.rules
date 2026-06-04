@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwnSocialAsset(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /social-assets/{userId}/{platform}/{fileName} {
+      allow read: if isOwnSocialAsset(userId);
+      allow write: if isOwnSocialAsset(userId)
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

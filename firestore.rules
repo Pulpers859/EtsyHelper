@@ -1,0 +1,201 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isDataOwner(data) {
+      return isSignedIn() && data.ownerId == request.auth.uid;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function optionalString(data, field, maxChars) {
+      return data.get(field, null) == null
+          || (data.get(field, null) is string && data.get(field, null).size() <= maxChars);
+    }
+
+    function optionalNumber(data, field) {
+      return data.get(field, null) == null || data.get(field, null) is number;
+    }
+
+    function optionalBool(data, field) {
+      return data.get(field, null) == null || data.get(field, null) is bool;
+    }
+
+    function optionalList(data, field) {
+      return data.get(field, null) == null || data.get(field, null) is list;
+    }
+
+    function optionalMap(data, field) {
+      return data.get(field, null) == null || data.get(field, null) is map;
+    }
+
+    function optionalTimestamp(data, field) {
+      return data.get(field, null) == null || data.get(field, null) is timestamp;
+    }
+
+    // --- Validation Blueprints ---
+
+    function isValidInventoryItem(data) {
+      return data.keys().hasAll(['name', 'stockLevel', 'price', 'ownerId', 'updatedAt']) 
+          && data.name is string && data.name.size() > 0 && data.name.size() <= 200
+          && data.stockLevel is int && data.stockLevel >= 0
+          && data.price is number && data.price >= 0
+          && data.ownerId == request.auth.uid
+          && data.updatedAt == request.time
+          && optionalString(data, 'description', 10000)
+          && optionalString(data, 'category', 200)
+          && optionalString(data, 'imageUrl', 2000000)
+          && optionalString(data, 'etsyListingId', 128)
+          && optionalString(data, 'sku', 128)
+          && optionalString(data, 'source', 32)
+          && optionalNumber(data, 'costPrice')
+          && optionalNumber(data, 'reorderPoint')
+          && optionalNumber(data, 'monthlySales')
+          && optionalNumber(data, 'leadTimeDays')
+          && optionalList(data, 'tags')
+          && optionalList(data, 'materials')
+          && optionalTimestamp(data, 'createdAt');
+    }
+
+    function isValidSocialPost(data) {
+      return data.keys().hasAll(['platform', 'content', 'status', 'ownerId', 'updatedAt'])
+          && data.platform in ['instagram', 'pinterest', 'facebook', 'twitter', 'tiktok']
+          && data.content is string && data.content.size() > 0 && data.content.size() <= 5000
+          && data.status in ['draft', 'scheduled', 'posted', 'failed']
+          && (data.get('imageUrl', null) == null || (data.imageUrl is string && data.imageUrl.size() <= 1000000))
+          && optionalString(data, 'assetPath', 500)
+          && data.ownerId == request.auth.uid
+          && data.updatedAt == request.time
+          && optionalList(data, 'hashtags')
+          && optionalString(data, 'pillar', 120)
+          && optionalString(data, 'campaignName', 200)
+          && optionalString(data, 'objective', 300)
+          && optionalString(data, 'handoffStatus', 32)
+          && optionalString(data, 'handoffChannel', 32)
+          && optionalMap(data, 'engagement')
+          && optionalTimestamp(data, 'scheduledAt')
+          && optionalTimestamp(data, 'postedAt')
+          && optionalTimestamp(data, 'createdAt');
+    }
+
+    function isValidUser(data) {
+      return data.updatedAt == request.time
+          && optionalBool(data, 'etsyConnected')
+          && optionalBool(data, 'instagramConnected')
+          && optionalString(data, 'shopName', 200)
+          && optionalString(data, 'etsyShopUrl', 500)
+          && optionalString(data, 'niche', 200)
+          && optionalString(data, 'idealCustomer', 500)
+          && optionalString(data, 'brandTone', 500)
+          && optionalString(data, 'focusProduct', 200)
+          && optionalNumber(data, 'weeklyRevenueGoal')
+          && optionalNumber(data, 'monthlyRevenueGoal')
+          && optionalNumber(data, 'shippingLeadTimeDays')
+          && optionalString(data, 'instagramHandle', 120)
+          && optionalString(data, 'etsyApplicationStatus', 50);
+    }
+
+    function isValidInteraction(data) {
+      return data.keys().hasAll(['customerName', 'message', 'status', 'timestamp', 'ownerId'])
+          && data.customerName is string && data.customerName.size() > 0
+          && data.message is string && data.message.size() > 0
+          && data.status in ['pending', 'replied', 'resolved']
+          && data.ownerId == request.auth.uid
+          && data.timestamp is timestamp
+          && optionalString(data, 'customerEmail', 320)
+          && optionalString(data, 'response', 10000)
+          && optionalString(data, 'notes', 10000)
+          && optionalString(data, 'summary', 2000)
+          && optionalString(data, 'sentiment', 32)
+          && optionalString(data, 'category', 64)
+          && optionalString(data, 'relatedOrderId', 128)
+          && optionalString(data, 'source', 32)
+          && optionalString(data, 'etsyReceiptId', 128)
+          && optionalString(data, 'orderStatus', 32)
+          && optionalList(data, 'tags')
+          && optionalTimestamp(data, 'respondedAt');
+    }
+
+    function isValidTrend(data) {
+      return data.keys().hasAll(['keyword', 'popularityScore', 'lastAnalyzed', 'ownerId'])
+          && data.keyword is string && data.keyword.size() > 0
+          && data.popularityScore is number
+          && data.ownerId == request.auth.uid
+          && data.lastAnalyzed == request.time
+          && optionalList(data, 'suggestedIdeas')
+          && optionalString(data, 'analysis', 5000)
+          && optionalString(data, 'competitionLevel', 32)
+          && optionalString(data, 'opportunityWindow', 200);
+    }
+
+    // --- Rules ---
+
+    match /inventory/{itemId} {
+      allow get: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidInventoryItem(incoming());
+      allow update: if isSignedIn() && isValidInventoryItem(incoming()) 
+                     && existing().ownerId == request.auth.uid
+                     && incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+
+    match /posts/{postId} {
+      allow get: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidSocialPost(incoming());
+      allow update: if isSignedIn()
+                     && existing().ownerId == request.auth.uid
+                     && isValidSocialPost(incoming())
+                     && incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+
+    match /interactions/{interactionId} {
+      allow get: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidInteraction(incoming());
+      allow update: if isSignedIn() && isValidInteraction(incoming())
+                     && existing().ownerId == request.auth.uid
+                     && incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+
+    match /trends/{trendId} {
+      allow get: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidTrend(incoming());
+      allow update: if isSignedIn() && isValidTrend(incoming())
+                     && existing().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUser(incoming());
+    }
+  }
+}

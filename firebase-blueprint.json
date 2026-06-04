@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "InventoryItem": {
+      "title": "Inventory Item",
+      "description": "Represents a product in the Etsy shop.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "stockLevel": { "type": "integer" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "stockLevel", "price"]
+    },
+    "SocialPost": {
+      "title": "Social Media Post",
+      "description": "A scheduled or posted social media update.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "platform": { "type": "string", "enum": ["instagram", "pinterest", "facebook", "twitter"] },
+        "content": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "scheduled", "posted"] },
+        "scheduledAt": { "type": "string", "format": "date-time" },
+        "postedAt": { "type": "string", "format": "date-time" },
+        "engagement": {
+          "type": "object",
+          "properties": {
+            "likes": { "type": "integer" },
+            "shares": { "type": "integer" },
+            "comments": { "type": "integer" }
+          }
+        }
+      },
+      "required": ["platform", "content", "status"]
+    },
+    "CustomerInteraction": {
+      "title": "Customer Interaction",
+      "description": "A record of a customer message and the response.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "message": { "type": "string" },
+        "response": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "replied"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["customerName", "message", "status", "timestamp"]
+    },
+    "TrendAnalysis": {
+      "title": "Trend Analysis",
+      "description": "Market trend data and suggested product ideas.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "keyword": { "type": "string" },
+        "popularityScore": { "type": "number" },
+        "suggestedIdeas": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "lastAnalyzed": { "type": "string", "format": "date-time" }
+      },
+      "required": ["keyword", "popularityScore", "lastAnalyzed"]
+    },
+    "UserNexus": {
+      "title": "User Nexus Settings",
+      "description": "OAuth connection status and user-specific settings.",
+      "type": "object",
+      "properties": {
+        "etsyConnected": { "type": "boolean" },
+        "instagramConnected": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "inventory": {
+      "schema": "InventoryItem",
+      "description": "Collection of shop products."
+    },
+    "posts": {
+      "schema": "SocialPost",
+      "description": "Social media content and schedule."
+    },
+    "interactions": {
+      "schema": "CustomerInteraction",
+      "description": "Customer messages and AI-generated responses."
+    },
+    "trends": {
+      "schema": "TrendAnalysis",
+      "description": "Market trend data points."
+    },
+    "users": {
+      "schema": "UserNexus",
+      "description": "User connection status and settings."
+    }
+  }
+}
