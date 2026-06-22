@@ -11,8 +11,8 @@
 
 ## Repo State
 - Stable branch: `main`
-- Working branch: `dev`
-- Expected default branch for normal work: `dev`
+- Working branch: `main` (single-branch model — normal work commits directly to `main`)
+- Expected default branch for normal work: `main`
 - Sync-first rule: `Before normal work, fetch from the remote first. If the working tree is clean and the active branch tracks the expected upstream, pull with --ff-only before editing. If local changes exist, fetch and reconcile instead of blindly pulling.`
 - If Git is not set up yet for this project, the agent should bootstrap it before doing major feature work.
 
@@ -35,9 +35,8 @@ If `git rev-parse --is-inside-work-tree` fails in the real project root, the age
 9. run a secret scan and remove any live credentials from tracked files before connecting/pushing GitHub
 10. connect the GitHub remote if I want one
 11. push `main`
-12. create and push `dev`
-13. add a local hook blocking direct commits to `main`
-14. create a dedicated PowerShell shortcut for this project
+12. add a local pre-commit secret-scan hook (see `scripts/git-pre-commit.js`)
+13. create a dedicated PowerShell shortcut for this project
 
 If the GitHub remote is unknown, the agent should finish local bootstrap first and only ask for the remote when push/setup is actually needed.
 
@@ -62,7 +61,7 @@ If the GitHub remote is unknown, the agent should finish local bootstrap first a
 - If validation, linting, or review logic is too rigid and rejects good output, improve the rule when appropriate instead of dumbing down the product.
 - Do not silently tolerate poor architecture if it is now a maintenance risk.
 - Handle Git operations when appropriate.
-- Keep normal work on `dev`, not `main`.
+- Do normal work directly on `main` (single-branch model). Use short-lived branches only for risky, large, or experimental changes, and fast-forward them back into `main`.
 - Before editing on an existing repo, run a fetch and check ahead/behind state; if clean, pull the tracked branch with `--ff-only`.
 - Audit adjacent risks after making fixes.
 - Run the checks that are realistically available in the current environment.
@@ -115,26 +114,27 @@ The agent should confirm:
 - Runtime environments that matter: `local web`, `Express dev server`, `Firebase Auth/Firestore/Storage`, `Etsy OAuth/API`, `Instagram OAuth/API`, `Playwright smoke tests`
 
 ## Git / Release Notes
-- Preferred everyday flow:
+- Single-branch model: `main` is the only long-lived branch and the source of truth.
+- Preferred everyday flow (commit directly to `main`):
   - `git st`
+  - `git pull --ff-only`
   - `git diff`
   - `git add .`
   - `git commit -m "..."`
   - `git push`
-- Preferred promotion flow from `dev` to `main`:
-  - `git checkout main`
-  - `git pull --ff-only`
-  - `git merge --ff-only dev`
-  - `git push`
-  - `git checkout dev`
+- For risky/experimental work, branch off `main`, then fast-forward back:
+  - `git checkout -b short-lived-branch`
+  - `git commit -m "..."`
+  - `git checkout main && git merge --ff-only short-lived-branch`
+  - `git branch -d short-lived-branch && git push`
 
 ## Project-Specific Instructions For The Next Agent
 ```text
 Project: EtsyHelper
 Active repo path: C:\Dev\EtsyHelper
-GitHub remote: none
+GitHub remote: origin -> github.com/pulpers859/etsyhelper
 Stable branch: main
-Working branch: dev
+Working branch: main (single-branch model)
 
 Important:
 - Treat C:\Dev\EtsyHelper as the source of truth.

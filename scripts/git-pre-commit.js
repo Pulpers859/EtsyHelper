@@ -12,14 +12,6 @@ function runGit(args) {
   }).trim();
 }
 
-function getCurrentBranch() {
-  try {
-    return runGit(['branch', '--show-current']);
-  } catch {
-    return '';
-  }
-}
-
 function getStagedFiles() {
   const output = runGit(['diff', '--cached', '--name-only', '--diff-filter=ACMR']);
   return output ? output.split(/\r?\n/).filter(Boolean) : [];
@@ -62,12 +54,8 @@ const blockedContentPatterns = [
   { label: 'App session secret assignment', regex: /^\s*(?:APP_SESSION_SECRET|ETSY_COOKIE_SECRET)\s*=\s*.+$/m }
 ];
 
-const branch = getCurrentBranch();
-if (branch === 'main') {
-  console.error('Direct commits to main are blocked. Switch to dev or another working branch first.');
-  process.exit(1);
-}
-
+// Single-branch model: normal work commits directly to `main`, so the branch
+// gate has been removed. This hook now focuses solely on blocking secrets.
 const stagedFiles = getStagedFiles();
 const violations = [];
 

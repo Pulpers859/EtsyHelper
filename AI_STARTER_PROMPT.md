@@ -52,9 +52,8 @@ If the project has no Git repo yet, use this bootstrap standard:
 8. Make the initial commit
 9. Run a secret scan and remove any live credentials from tracked files before connecting/pushing GitHub
 10. If I want GitHub, help connect/push the repo
-11. Create dev from main
-12. Add a local hook blocking direct commits to main
-13. Create a dedicated PowerShell shortcut for the repo instead of globally pinning PowerShell
+11. Add a local pre-commit secret-scan hook (single-branch model: normal work commits directly to main)
+12. Create a dedicated PowerShell shortcut for the repo instead of globally pinning PowerShell
 
 Default working behavior:
 - I describe the issue here in chat
