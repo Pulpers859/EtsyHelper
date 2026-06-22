@@ -31,6 +31,17 @@
     @apply outline-none;
   }
 
+  /* Restore a visible keyboard-focus ring for interactive controls. The blanket
+     outline-none above removed focus affordance entirely, which strands keyboard
+     users. focus-visible keeps mouse clicks clean while making tab navigation
+     legible; the ring follows each element's own border-radius. */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible {
+    @apply ring-2 ring-slate-400 ring-offset-2 ring-offset-white;
+  }
+
   * {
     scrollbar-width: thin;
     scrollbar-color: theme(colors.indigo.200) transparent;

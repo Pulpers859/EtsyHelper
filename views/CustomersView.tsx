@@ -17,7 +17,9 @@ import { motion } from 'framer-motion';
 
 import { db } from '../lib/firebase';
 import { cn } from '../lib/utils';
+import { Button } from '../components/ui';
 import { analyzeCustomerSentiment, suggestResponse } from '../services/gemini';
+import { cleanInboundMessage } from '../services/ingest';
 import {
   CustomerPriorityFilter,
   CustomerStatusFilter,
@@ -327,12 +329,15 @@ export default function CustomersView({
     if (!newInteraction.customerName.trim() || !newInteraction.message.trim()) return;
     setCreating(true);
     try {
-      const analysis = await analyzeCustomerSentiment(newInteraction.message);
+      // Normalize messy pastes (HTML, quoted reply chains, signatures) before
+      // it reaches the AI or the stored record — cleaner input, cleaner triage.
+      const cleanMessage = cleanInboundMessage(newInteraction.message) || newInteraction.message.trim();
+      const analysis = await analyzeCustomerSentiment(cleanMessage);
 
       const interactionPayload = {
         customerName: newInteraction.customerName.trim(),
         customerEmail: newInteraction.customerEmail.trim() || null,
-        message: newInteraction.message.trim(),
+        message: cleanMessage,
         status: 'pending' as const,
         priority: (analysis.priority || 'normal') as CustomerInteraction['priority'],
         sentiment: (analysis.sentiment || 'neutral') as CustomerInteraction['sentiment'],
@@ -405,7 +410,8 @@ export default function CustomersView({
           <div className="mt-6 rounded-[1.8rem] border border-slate-200 bg-slate-50 p-5">
             <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Add from message</p>
             <p className="mt-2 text-sm leading-7 text-slate-600">
-              Paste a message from Etsy or email to triage it and draft a response path.
+              Paste a message from Etsy or email to triage it and draft a response path. Quoted reply
+              threads, signatures, and HTML formatting are tidied up automatically before triage.
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <ProfileField label="Customer name" value={newInteraction.customerName} onChange={(value) => setNewInteraction((current) => ({ ...current, customerName: value }))} placeholder="Jane Doe" />
@@ -421,14 +427,13 @@ export default function CustomersView({
               />
             </div>
             <div className="mt-5 flex justify-end">
-              <button
+              <Button
                 onClick={addInteraction}
                 disabled={creating}
-                className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-xs font-black uppercase tracking-[0.22em] text-white transition hover:bg-slate-800 disabled:opacity-60"
+                leadingIcon={creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               >
-                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 Add and triage
-              </button>
+              </Button>
             </div>
           </div>
         )}

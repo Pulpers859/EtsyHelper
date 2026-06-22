@@ -6,6 +6,16 @@
 
 This contains everything you need to run your app locally.
 
+## Working principles & design system
+
+Two short guides keep EtsyHelper premium and simple as it grows — read them
+before adding features or UI:
+
+- [`docs/PRODUCT_PRINCIPLES.md`](docs/PRODUCT_PRINCIPLES.md) — the feature-intake
+  gate, module map, and "when to say no" defaults that protect against bloat.
+- [`DESIGN.md`](DESIGN.md) — the design language (typography, color/tone, shape,
+  spacing, components) so new UI stays consistent and on-brand.
+
 ## Source Of Truth
 
 The active coding repo for EtsyHelper now lives at:
